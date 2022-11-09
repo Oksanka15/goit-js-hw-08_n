@@ -1,46 +1,48 @@
-import throttle from "lodash.throttle";
 
+import throttle from 'lodash.throttle';
 const formEl = document.querySelector('.feedback-form');
-console.log(formEl);
-const STORAGE_KEY = 'feedback-form-state';
-const formData = {};
+const LOCAL_STORAGE_KEY = 'feedback-form-state';
 
-updateForm();
+let data = {};
 
-formEl.addEventListener('input', throttle(onFormInput,500));
+loadForm();
+
+formEl.addEventListener('input', throttle(onSaveFormInput, 500));
+
 formEl.addEventListener('submit', onFormSubmit);
 
-function onFormInput(e) {
-    formData[e.target.name] = e.target.value;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(formData));
-    console.log(formData);
-};
+function onSaveFormInput(event) {
+  data = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY)) || {};
 
-function onFormSubmit(e) {
-    e.preventDefault();
-    const {
-        elements: { email, message }
-      } = e.target;
-      
-    
-      if (email.value === "" || message.value === "") {
-        return window.alert("Please fill in all the fields!");
-      };
-    console.log({'Email': email.value, 'Message': message.value});
-    formEl.reset();
-    localStorage.removeItem(STORAGE_KEY);
-    
-};
+  data[event.target.name] = event.target.value;
 
+  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(data));
+}
 
-function updateForm() {
-    if (localStorage.getItem(STORAGE_KEY) === null) {
-return
+function onFormSubmit(event) {
+  event.preventDefault();
+  if (!event.target.email.value || !event.target.message.value) {
+    alert("Please fill in all the fields!");
+    return;
+  }
+
+  event.target.reset();
+  console.log(data);
+  localStorage.removeItem(LOCAL_STORAGE_KEY);
+
+}
+
+function loadForm() {
+  try {
+    let formLoad = JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY));
+    if (!formLoad) {
+      return;
     }
-    const savedForm = JSON.parse(localStorage.getItem(STORAGE_KEY));
-   
-      Object.entries(savedForm).forEach(([name,value]) => {
-        formData[name] = value;
-        formEl.elements[name].value = value;
-      });
-};
+
+    data = formLoad;
+    formEl.email.value = data.email || '';
+    formEl.message.value = data.message || '';
+  } catch (error) {
+    console.error('Error.message ', error.message);
+  }
+}
